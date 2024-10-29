@@ -2,35 +2,61 @@ const express = require('express');
 const app = express();
 const port = 3000;
 
-app.use(express.json()); // Para permitir JSON no body das requisições
+const Hapi = require('@hapi/hapi');
 
-app.get('/', (req, res) => {
-    res.send('Olá, mundo! Bem-vindo à minha API');
+const init = async () => {
+    const server = Hapi.server({
+        port: 3000,
+        host: 'localhost'
+    });
+
+    // Rota GET para listar todos os itens
+    server.route({
+        method: 'GET',
+        path: '/api/items',
+        handler: (request, h) => {
+            return { message: 'Listando todos os itens' };
+        }
+    });
+
+    // Rota POST para criar um novo item
+    server.route({
+        method: 'POST',
+        path: '/api/items',
+        handler: (request, h) => {
+            const newItem = request.payload;
+            return { message: 'Item criado', item: newItem };
+        }
+    });
+
+    // Rota PUT para atualizar um item
+    server.route({
+        method: 'PUT',
+        path: '/api/items/{id}',
+        handler: (request, h) => {
+            const id = request.params.id;
+            const updatedItem = request.payload;
+            return { message: `Item ${id} atualizado`, item: updatedItem };
+        }
+    });
+
+    // Rota DELETE para remover um item
+    server.route({
+        method: 'DELETE',
+        path: '/api/items/{id}',
+        handler: (request, h) => {
+            const id = request.params.id;
+            return { message: `Item ${id} deletado` };
+        }
+    });
+
+    await server.start();
+    console.log('Servidor rodando em %s', server.info.uri);
+};
+
+process.on('unhandledRejection', (err) => {
+    console.log(err);
+    process.exit(1);
 });
 
-app.listen(port, () => {
-    console.log(`Servidor rodando em http://localhost:${port}`);
-});
-// Rota GET para buscar dados
-app.get('/api/items', (req, res) => {
-    res.json({ message: 'Listando todos os itens' });
-});
-
-// Rota POST para criar um novo item
-app.post('/api/items', (req, res) => {
-    const newItem = req.body;
-    res.json({ message: 'Item criado', item: newItem });
-});
-
-// Rota PUT para atualizar um item existente
-app.put('/api/items/:id', (req, res) => {
-    const { id } = req.params;
-    const updatedItem = req.body;
-    res.json({ message: `Item ${id} atualizado`, item: updatedItem });
-});
-
-// Rota DELETE para remover um item
-app.delete('/api/items/:id', (req, res) => {
-    const { id } = req.params;
-    res.json({ message: `Item ${id} deletado` });
-});
+init();
